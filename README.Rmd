@@ -90,6 +90,7 @@ res <- tibble::tribble(
     "template", "carpentries", "styles"
   ) %>%
     generate_zenodo_json(local_path = "~/Documents/DataCarpentry/image-processing",
+      since = "2021-06-09",
       editors = c("tobyhodges", "uschille", "bobturneruk", "quist00", "K-Meech"),
       ignore = c("francois.michonneau@gmail.com", "zkamvar@carpentries.org"))
 ```
