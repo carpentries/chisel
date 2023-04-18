@@ -8,7 +8,7 @@ Functions to facilitate work across The Carpentries repositories.
 Please note, this is not intended for general use. It contains functions
 that are designed to work with the idiosyncracies of The Carpentries
 Lesson Infrastructure. If you have questions, please contact
-\[@zkamvar\](<https://github.com/zkamvar>)
+[@zkamvar](https://github.com/zkamvar)
 
 ## Working with this repository
 
@@ -82,6 +82,7 @@ the package code. These examples will often look like this:
         "template", "carpentries", "styles"
       ) %>%
         generate_zenodo_json(local_path = "~/Documents/DataCarpentry/image-processing",
+          since = "2021-06-09",
           editors = c("tobyhodges", "uschille", "bobturneruk", "quist00", "K-Meech"),
           ignore = c("francois.michonneau@gmail.com", "zkamvar@carpentries.org"))
 
