@@ -159,9 +159,9 @@ extract_shortlog_history <- function(repos, since = NULL) {
 
   purrr::map_df(repos, function(x) {
     copy_master_mailmap(x$path)
-    system(paste("cd ", x$path, ";",
-      'git shortlog --format=\"%H|%aN|%aE\"',
-      since, '| grep \"|\" > ', fout))
+    system(paste0("cd ", x$path, ";",
+      'git shortlog --format=\"%H|%aN|%aE\" --since=',
+      since, ' | grep \"|\" > ', fout))
 
     readr::read_delim(fout, delim = "|",
       col_names = FALSE, trim_ws = TRUE,
@@ -265,6 +265,7 @@ get_origin_repo <- function(repo_list,
   # split rows of the data frame by repository, creating a list of data frames
   # for each of the repositories represented
   res_split <- split(res, res$repo)
+  to_keep <- res$repo[[1]]
 
   # The final list to count contributions
   .r <- vector("list", length(res_split))
@@ -282,7 +283,18 @@ get_origin_repo <- function(repo_list,
     # Aggregate the number of commits from each person by email, sorted.
     # NOTE: ZNK: I would like to add a way to collapse the commits into a list
     # column so that I can query them easily
-    .r[[i]] <- dplyr::count(focus_src, .data$name, .data$email, sort = TRUE)
+    .r[[i]] <- dplyr::group_by(focus_src, .data$name, .data$email) |>
+      dplyr::summarize(
+        name = unique(.data$name),
+        email = unique(.data$email),
+        n = length(.data$sha),
+        sha = list(.data$sha),
+        repo = unique(.data$repo)
+      ) |> 
+      dplyr::ungroup() |> 
+      dplyr::arrange(dplyr::desc(.data$n)) |>
+      dplyr::filter(.data$repo == to_keep)
+    # .r[[i]] <- dplyr::count(focus_src, .data$name, .data$email, sort = TRUE)
   }
 
   # return a data frame that has all the contributors to the lesson labelled
@@ -533,6 +545,24 @@ if (FALSE) {
     editors = c("iramosp", "aguspesce", "vinisalazar"),
     ignore = c("francois.michonneau@gmail.com", "zkamvar@carpentries.org", "tbyhdgs@gmail.com")
   )
+  }
+  {
+  res <- tibble::tribble(
+    ~name,  ~owner, ~repo,
+    "main", "swcarpentry", "shell-novice-es",
+    "source", "swcarpentry", "shell-novice",
+    "template", "carpentries", "styles"
+  ) %>%
+    generate_zenodo_json(local_path = "~/Documents/Carpentries/Git/swcarpentry/shell-novice-es",
+      since = "2018-03-14",
+      editors =  c("clarallebot",
+        "vjimenez9",
+        "Helysalgado",
+        "spereyra"),
+      ignore = c("ebecker@carpentries.org",
+        "francois.michonneau@gmail.com",
+        "tobyhodges@carpentries.org",
+        "zkamvar@carpentries.org"))
   }
   # instructor-training -- 2023-01-27
   {
