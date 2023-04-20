@@ -624,7 +624,7 @@ add_pub_name <- function(.data) {
         lesson_publication_consent == "unset" ~ person_name_with_middle,
       # then orcid info
       lesson_publication_consent == "orcid" &
-        is_valid_orcid(clean_up_orcid(orcid)) ~ tryCatch(get_orcid_name(clean_up_orcid(orcid)), error = function(e) person_name_with_middle) ,
+        is_valid_orcid(clean_up_orcid(orcid)) ~ tryCatch(get_orcid_name(clean_up_orcid(orcid)), error = function(e) {message(e); person_name_with_middle}) ,
       # then github (just return GitHub username)
       # 2023-01-27, ZNK: AMY's github consent is for the _handle_ not the name.
       lesson_publication_consent == "github" ~  github, #get_github_name(github),
@@ -711,6 +711,18 @@ is_valid_orcid <- function(orcid) {
     grepl("^\\d{4}-\\d{4}-\\d{4}-(\\d{3}X|\\d{4})$", orcid)
 }
 
+#' Register the ORCiD app under Zhian's account
+#'
+#' This is to fix the sudden change in the ORCiD API where Scott's app
+#' no longer worked. Details can be found in
+#' https://fosstodon.org/@zkamvar/110233291511298252
+register_orcid_app <- function() {
+  # This needs to be done once per session
+  rorcid::orcid_auth(client_id = "APP-14NOQS85ZPM4ANDH", 
+    client_secret = "8b0af79c-87da-46c6-9e45-a6f1aa86bd03", 
+    reauth = TRUE)
+}
+
 get_orcid_name <- function(orcid) {
   purrr::map_chr(orcid, function(.x) {
     if (is.na(.x) || !nzchar(.x)) return(NA_character_)
@@ -781,20 +793,23 @@ generate_zenodo_json <- function(repos, local_path, editors_github,
     is.na(consent_var) | consent_var != "no"
   }
 
+  # manually register the ORCiD app so that we can access names
+  register_orcid_app()
+
   creators_df <- get_lesson_creators(repos, since = since) %>%
     dplyr::filter(gives_consent(lesson_publication_consent)) %>%
     dplyr::anti_join(tibble::tibble(email = ignore), by = "email") 
   
   # message about orcid API kerfuffle
   # see <https://fosstodon.org/@sckottie/110216560448583570>
-  message("MANUALLY REPLACE WITH ORCID NAMES\n--------------------\n")
-  creators_df %>%
-    dplyr::filter(lesson_publication_consent == "orcid") %>%
-    dplyr::mutate(orcid = sub("^([0-9])", "https://orcid.org/\\1", orcid)) %>%
-    glue::glue_data("{format(pub_name, justify = 'right')} ... <{orcid}>") %>%
-    glue::glue_collapse("\n") %>%
-    message()
-  message("\n---------------------\n")
+  # message("MANUALLY REPLACE WITH ORCID NAMES\n--------------------\n")
+  # creators_df %>%
+  #   dplyr::filter(lesson_publication_consent == "orcid") %>%
+  #   dplyr::mutate(orcid = sub("^([0-9])", "https://orcid.org/\\1", orcid)) %>%
+  #   glue::glue_data("{format(pub_name, justify = 'right')} ... <{orcid}>") %>%
+  #   glue::glue_collapse("\n") %>%
+  #   message()
+  # message("\n---------------------\n")
 
   creators  <- creators_df %>%
     dplyr::select(.data$pub_name, .data$orcid) %>%
