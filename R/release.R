@@ -160,7 +160,7 @@ extract_shortlog_history <- function(repos, since = NULL) {
   purrr::map_df(repos, function(x) {
     copy_master_mailmap(x$path)
     system(paste0("cd ", x$path, ";",
-      'git shortlog --format=\"%H|%aN|%aE\" --since=',
+      'git shortlog --format=\"%H|%aN|%aE\" ',
       since, ' | grep \"|\" > ', fout))
 
     readr::read_delim(fout, delim = "|",
